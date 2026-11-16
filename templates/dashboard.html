@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Dashboard</h1>
+  <a class="btn primary hide-mobile" href="/issues/new">+ New request</a>
+</div>
+
+<section class="section">
+  <h2>Assigned to me <span class="count">{{ assigned.len() }}</span></h2>
+  {% if assigned.is_empty() %}
+    <p class="empty">Nothing is assigned to you right now.</p>
+  {% else %}
+    <div class="issue-list">{% for i in assigned %}{% include "_issue_card.html" %}{% endfor %}</div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <h2>My submitted requests <span class="count">{{ submitted.len() }}</span></h2>
+  {% if submitted.is_empty() %}
+    <p class="empty">You haven't submitted any requests. <a href="/issues/new">Report a problem</a>.</p>
+  {% else %}
+    <div class="issue-list">{% for i in submitted %}{% include "_issue_card.html" %}{% endfor %}</div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <h2>Waiting for someone to take them <span class="count">{{ unassigned.len() }}</span></h2>
+  {% if unassigned.is_empty() %}
+    <p class="empty">Every open request has an assignee.</p>
+  {% else %}
+    <div class="issue-list">{% for i in unassigned %}{% include "_issue_card.html" %}{% endfor %}</div>
+  {% endif %}
+</section>
+{% endblock %}
+{% block fab %}<a class="fab" href="/issues/new" aria-label="New request">+</a>{% endblock %}

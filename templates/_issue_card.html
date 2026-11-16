@@ -1,0 +1,18 @@
+<a class="issue-card" href="/issues/{{ i.id }}">
+  <div class="card-top">
+    <span class="badge state-{{ i.state }}">{{ i.state }}</span>
+    {% if i.priority != "normal" %}<span class="badge prio-{{ i.priority }}">{{ i.priority }}</span>{% endif %}
+    {% if i.needs_reply %}<span class="badge reply">awaiting your reply</span>{% endif %}
+    <span class="num">#{{ i.id }}</span>
+  </div>
+  <div class="card-title">{{ i.title }}</div>
+  <div class="card-meta">
+    {% if let Some(loc) = i.location %}<span>📍 {{ loc }}</span>{% endif %}
+    {% if let Some(code) = i.equipment_code %}<span class="code">▥ {{ code }}</span>{% endif %}
+    <span>by {{ i.submitter_name }}</span>
+    {% if let Some(a) = i.assignee_name %}<span>→ {{ a }}</span>{% endif %}
+    {% if i.comment_count > 0 %}<span>💬 {{ i.comment_count }}</span>{% endif %}
+    {% if i.photo_count > 0 %}<span>📷 {{ i.photo_count }}</span>{% endif %}
+    <time class="ts" datetime="{{ i.updated.iso }}" data-relative>{{ i.updated.text }}</time>
+  </div>
+</a>

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}#{{ issue.id }} {{ issue.title }} · Greenhouse Maintenance{% endblock %}
+{% block content %}
+{% if let Some(e) = error %}<p class="alert error">{{ e }}</p>{% endif %}
+<article class="card issue">
+  <div class="card-top">
+    <span class="badge state-{{ issue.state }}">{{ issue.state }}</span>
+    <span class="badge prio-{{ issue.priority }}">{{ issue.priority }} priority</span>
+    <span class="num">#{{ issue.id }}</span>
+  </div>
+  <h1>{{ issue.title }}</h1>
+  <dl class="facts">
+    <div><dt>Submitted by</dt><dd>{{ issue.submitter_name }}</dd></div>
+    <div><dt>Submitted</dt><dd><time class="ts" datetime="{{ issue.created.iso }}">{{ issue.created.text }}</time></dd></div>
+    <div><dt>Assignee</dt><dd>{% if let Some(a) = issue.assignee_name %}{{ a }}{% else %}<em>nobody yet</em>{% endif %}</dd></div>
+    {% if let Some(loc) = issue.location %}<div><dt>Location</dt><dd>{{ loc }}</dd></div>{% endif %}
+    {% if let Some(code) = issue.equipment_code %}
+    <div><dt>Equipment code</dt><dd><a class="code" href="/issues?state=all&amp;q={{ code|urlencode }}" title="Other requests for this equipment">{{ code }}</a>
+      {% if let Some(f) = issue.equipment_code_format %}<small class="muted">({{ f }})</small>{% endif %}</dd></div>
+    {% endif %}
+    {% if let Some(c) = issue.closed %}<div><dt>Closed</dt><dd><time class="ts" datetime="{{ c.iso }}">{{ c.text }}</time></dd></div>{% endif %}
+  </dl>
+  <div class="rich">{{ issue.description_html|safe }}</div>
+  {% if !photos.is_empty() %}
+  <div class="gallery">
+    {% for p in photos %}<a href="/attachments/{{ p.id }}" target="_blank" rel="noopener"><img loading="lazy" src="/attachments/{{ p.id }}" alt="{{ p.name }}"></a>{% endfor %}
+  </div>
+  {% endif %}
+  {% if can_take %}
+  <form method="post" action="/issues/{{ issue.id }}/take" class="take">
+    <button class="btn primary" type="submit">🔧 I'll take this</button>
+  </form>
+  {% endif %}
+</article>
+
+{% if can_participate %}
+<details class="card manage" {% if issue.state == "unassigned" %}open{% endif %}>
+  <summary>Status &amp; assignment</summary>
+  <form method="post" action="/issues/{{ issue.id }}/update" class="grid3">
+    <label>State
+      <select name="state">
+        {% for s in states %}<option value="{{ s }}" {% if issue.state == *s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Assignee
+      <select name="assignee_id">
+        <option value="">Unassigned</option>
+        {% for u in users %}<option value="{{ u.id }}" {% if u.selected %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Priority
+      <select name="priority">
+        {% for p in priorities %}<option value="{{ p }}" {% if issue.priority == *p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="actions"><button class="btn primary" type="submit">Save</button></div>
+  </form>
+</details>
+{% endif %}
+
+<section class="conversation">
+  <h2>Conversation</h2>
+  {% if comments.is_empty() %}<p class="empty">No messages yet.</p>{% endif %}
+  {% for c in comments %}
+    {% if c.kind == "event" %}
+    <div class="event" id="c{{ c.id }}"><strong>{{ c.author_name }}</strong> {{ c.body_html|safe }} · <time class="ts" datetime="{{ c.created.iso }}" data-relative>{{ c.created.text }}</time></div>
+    {% else %}
+    <div class="msg {% if c.is_mine %}mine{% endif %} kind-{{ c.kind }}" id="c{{ c.id }}">
+      <div class="msg-head">
+        <strong>{{ c.author_name }}</strong>
+        {% if !c.role.is_empty() %}<span class="role">{{ c.role }}</span>{% endif %}
+        <span class="badge kind">{{ c.kind }}</span>
+        <time class="ts" datetime="{{ c.created.iso }}">{{ c.created.text }}</time>
+      </div>
+      {% if !c.body_html.is_empty() %}<div class="rich">{{ c.body_html|safe }}</div>{% endif %}
+      {% if !c.photos.is_empty() %}
+      <div class="gallery small">
+        {% for p in c.photos %}<a href="/attachments/{{ p.id }}" target="_blank" rel="noopener"><img loading="lazy" src="/attachments/{{ p.id }}" alt="{{ p.name }}"></a>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if can_participate %}
+  <form method="post" action="/issues/{{ issue.id }}/comments" enctype="multipart/form-data" class="card stack reply" data-upload>
+    <fieldset class="kinds">
+      <legend>Add a</legend>
+      <label><input type="radio" name="kind" value="question" {% if default_kind == "question" %}checked{% endif %}> Question</label>
+      <label><input type="radio" name="kind" value="response" {% if default_kind == "response" %}checked{% endif %}> Response</label>
+      <label><input type="radio" name="kind" value="note"> Note</label>
+    </fieldset>
+    {% let editor_name = "body" %}
+    {% let editor_value = "" %}
+    {% let editor_placeholder = "Write a message…" %}
+    {% include "_editor.html" %}
+    {% include "_photos.html" %}
+    <div class="actions"><button class="btn primary" type="submit" data-submit>Send</button></div>
+  </form>
+  {% else %}
+  <p class="muted">Only the submitter, the assignee and administrators can post here.{% if can_take %} Take the request to join the conversation.{% endif %}</p>
+  {% endif %}
+</section>
+{% endblock %}

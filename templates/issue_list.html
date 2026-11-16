@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}All requests · Greenhouse Maintenance{% endblock %}
+{% block fab %}<a class="fab" href="/issues/new" aria-label="New request">+</a>{% endblock %}
+{% block content %}
+<div class="page-head"><h1>All requests</h1></div>
+<form method="get" action="/issues" class="filters card">
+  <div class="input-row">
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="Search title, location or barcode">
+    <button type="button" class="btn" data-scan="#q" title="Scan a barcode to find equipment">Scan</button>
+  </div>
+  <div class="filter-row">
+    <select name="state" aria-label="State">
+      <option value="active" {% if state == "active" %}selected{% endif %}>Not closed</option>
+      <option value="all" {% if state == "all" %}selected{% endif %}>Any state</option>
+      {% for s in states %}<option value="{{ s }}" {% if state == *s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <select name="scope" aria-label="Whose">
+      <option value="all" {% if scope == "all" %}selected{% endif %}>Everyone's</option>
+      <option value="mine" {% if scope == "mine" %}selected{% endif %}>Submitted by me</option>
+      <option value="assigned" {% if scope == "assigned" %}selected{% endif %}>Assigned to me</option>
+    </select>
+    <button class="btn primary" type="submit">Filter</button>
+  </div>
+</form>
+{% if issues.is_empty() %}
+  <p class="empty">No requests match.</p>
+{% else %}
+  <div class="issue-list">{% for i in issues %}{% include "_issue_card.html" %}{% endfor %}</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/scanner.js" defer></script>{% endblock %}

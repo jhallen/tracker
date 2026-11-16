@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Log in · Greenhouse Maintenance{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>Log in</h1>
+  {% if let Some(e) = error %}<p class="alert error">{{ e }}</p>{% endif %}
+  <form method="post" action="/login" class="stack">
+    <label>Email
+      <input type="email" name="email" value="{{ email }}" autocomplete="username" required autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn primary block" type="submit">Log in</button>
+  </form>
+  {% include "_providers.html" %}
+  {% if allow_registration %}
+  <p class="muted center">New here? <a href="/register">Create an account</a></p>
+  {% endif %}
+</div>
+{% endblock %}

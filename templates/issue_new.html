@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}New request · Greenhouse Maintenance{% endblock %}
+{% block content %}
+<div class="page-head"><h1>New maintenance request</h1></div>
+{% if let Some(e) = error %}<p class="alert error">{{ e }}</p>{% endif %}
+<form method="post" action="/issues/new" enctype="multipart/form-data" class="card stack" data-upload>
+  <label>What's wrong? <small class="muted">(short title)</small>
+    <input type="text" name="title" value="{{ title }}" maxlength="200" required placeholder="e.g. Mister pump in house 3 not running">
+  </label>
+
+  <div class="grid2">
+    <label>Location
+      <input type="text" name="location" value="{{ location }}" placeholder="e.g. House 3, bench 12">
+    </label>
+    <label>Priority
+      <select name="priority">
+        {% for p in priorities %}<option value="{{ p }}" {% if priority == *p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+
+  <div class="field">
+    <label for="equipment_code">Equipment barcode / asset tag <small class="muted">(optional)</small></label>
+    <div class="input-row">
+      <input type="text" id="equipment_code" name="equipment_code" value="{{ equipment_code }}" autocomplete="off" placeholder="Scan or type the code">
+      <button type="button" class="btn" data-scan="#equipment_code" data-scan-format="#equipment_code_format">▥ Scan</button>
+    </div>
+    <input type="hidden" id="equipment_code_format" name="equipment_code_format" value="{{ equipment_code_format }}">
+    <small class="muted scan-format" data-format-label></small>
+  </div>
+
+  <div class="field">
+    <label>Describe the problem</label>
+    {% let editor_name = "description" %}
+    {% let editor_value = description.as_str() %}
+    {% let editor_placeholder = "What happened, when did it start, what have you tried?" %}
+    {% include "_editor.html" %}
+  </div>
+
+  <div class="field">
+    <label>Photos <small class="muted">(optional)</small></label>
+    {% include "_photos.html" %}
+  </div>
+
+  <label>Assign to <small class="muted">(optional — leave unassigned if unsure)</small>
+    <select name="assignee_id">
+      <option value="">Unassigned</option>
+      {% for u in users %}<option value="{{ u.id }}" {% if u.selected %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+    </select>
+  </label>
+
+  <div class="actions">
+    <a class="btn" href="/">Cancel</a>
+    <button class="btn primary" type="submit" data-submit>Submit request</button>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="/static/scanner.js" defer></script>{% endblock %}
