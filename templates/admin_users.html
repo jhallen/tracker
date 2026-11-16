@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Users · Greenhouse Maintenance{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Users</h1></div>
+<div class="table-wrap card">
+<table>
+  <thead><tr><th>Name</th><th>Email</th><th>Sign-in</th><th>Joined</th><th>Admin</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+  <tr>
+    <td data-label="Name">{{ u.name }}</td>
+    <td data-label="Email">{{ u.email }}</td>
+    <td data-label="Sign-in">{{ u.login_methods }}</td>
+    <td data-label="Joined"><time class="ts" datetime="{{ u.created.iso }}">{{ u.created.text }}</time></td>
+    <td data-label="Admin">
+      {% if u.is_self %}yes (you){% else %}
+      <form method="post" action="/admin/users/{{ u.id }}/toggle-admin" class="inline">
+        <button class="btn small" type="submit">{% if u.is_admin %}Revoke admin{% else %}Make admin{% endif %}</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

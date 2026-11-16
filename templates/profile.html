@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Profile · Greenhouse Maintenance{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Your profile</h1></div>
+{% if let Some(e) = error %}<p class="alert error">{{ e }}</p>{% endif %}
+{% if let Some(n) = notice %}<p class="alert ok">{{ n }}</p>{% endif %}
+
+<section class="card stack">
+  <h2>Details</h2>
+  <p class="muted">Signed in as <strong>{{ email }}</strong></p>
+  <form method="post" action="/profile" class="stack">
+    <label>Display name <input type="text" name="display_name" value="{{ display_name }}" maxlength="100" required></label>
+    <div class="actions"><button class="btn primary" type="submit">Save</button></div>
+  </form>
+</section>
+
+<section class="card stack">
+  <h2>{% if has_password %}Change password{% else %}Set a password{% endif %}</h2>
+  <form method="post" action="/profile/password" class="stack">
+    {% if has_password %}
+    <label>Current password <input type="password" name="current_password" autocomplete="current-password" required></label>
+    {% endif %}
+    <label>New password <small class="muted">(at least {{ min_password }} characters)</small>
+      <input type="password" name="new_password" autocomplete="new-password" minlength="{{ min_password }}" required></label>
+    <label>Confirm new password <input type="password" name="new_password_confirm" autocomplete="new-password" minlength="{{ min_password }}" required></label>
+    <div class="actions"><button class="btn primary" type="submit">Update password</button></div>
+  </form>
+</section>
+
+<section class="card stack">
+  <h2>Sign-in providers</h2>
+  {% if identities.is_empty() %}<p class="muted">No external accounts linked.</p>{% endif %}
+  <ul class="plain">
+    {% for i in identities %}
+    <li class="identity">
+      <span><strong>{{ i.provider_name }}</strong>{% if let Some(e) = i.email %} · {{ e }}{% endif %}</span>
+      <form method="post" action="/profile/unlink/{{ i.id }}" class="inline"><button class="btn small" type="submit">Unlink</button></form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if !linkable.is_empty() %}
+  <div class="providers">
+    {% for p in linkable %}<a class="btn provider provider-{{ p.slug }}" href="/auth/{{ p.slug }}/start?link=1">Link {{ p.name }}</a>{% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
