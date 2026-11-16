@@ -135,7 +135,9 @@
     }
     root.querySelectorAll('input[type="file"]').forEach((input) => {
       input.addEventListener("change", () => {
-        for (const f of input.files) files.push(f);
+        const added = Array.from(input.files);
+        files.push(...added);
+        root.dispatchEvent(new CustomEvent("photos:added", { bubbles: true, detail: { files: added } }));
         input.value = ""; // allow taking another photo; files live in `files`
         render();
       });

@@ -251,6 +251,15 @@ rendered with `|safe`.
 * Live video needs a secure context (HTTPS or localhost). As a fallback, the
   dialog offers **"Use a photo instead"**, which decodes a still image. The
   code can always be typed by hand.
+* On the New request form the scan control is a large dashed
+  "Scan equipment barcode" button just below the title, because users missed
+  the earlier small button. Photos are also checked: `app.js` fires a
+  bubbling `photos:added` event when photos are attached, and `scanner.js`
+  runs `decodeFile()` on each one. If a barcode is found and the equipment
+  code is still empty, the field is filled in and labelled
+  "Found in your photo as …". A code the user typed is never overwritten.
+  Before decoding with ZXing, `decodeFile()` scales photos down to 1600 px:
+  a 12 MP photo takes about 0.4 s in headless Chromium.
 * The issue list's search box also has a Scan button, so a technician can
   scan a machine and see its history. Search matches title, location and
   equipment code. On an issue page, the equipment code links to that search.
@@ -312,6 +321,7 @@ Done (v0.1):
 - [x] Camera photos with on-device resize; barcode/QR scanning (native or ZXing, live or from a photo)
 - [x] Admin user list (grant/revoke admin); CLI commands make-admin, create-user and migrate
 - [x] Diesel migrations and scripts; end-to-end tests
+- [x] v0.1.1: more prominent scan button; barcodes detected automatically in attached photos
 
 Ideas / next steps:
 - [ ] Email or web-push notifications when you are assigned or someone asks you a question

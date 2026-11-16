@@ -186,3 +186,6 @@ ul.plain { list-style: none; padding: 0; margin: 0; }
 .identity { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .4rem 0; border-bottom: 1px solid var(--border); }
 .msg.highlight { animation: flash 2s ease-out; }
 @keyframes flash { from { box-shadow: 0 0 0 4px var(--primary); } to { box-shadow: var(--shadow); } }
+.scan-field { display: flex; flex-direction: column; gap: .45rem; }
+.scan-field > label { margin-bottom: 0; }
+.scan-btn { width: 100%; border: 2px dashed var(--primary); color: var(--primary); background: var(--primary-soft); font-size: 1.05rem; min-height: 52px; }
