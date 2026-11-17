@@ -11,7 +11,10 @@ use serde::Deserialize;
 
 use crate::{
     AppState,
-    auth::{self, CurrentUser, MIN_PASSWORD_LEN},
+    auth::{
+        self, CurrentUser, MIN_PASSWORD_LEN,
+        verify::{self, SendOutcome},
+    },
     db,
     error::AppError,
     models::{OAuthIdentity, User},
@@ -69,6 +72,9 @@ async fn profile_page(
         notice,
         email: user.email.clone(),
         display_name: user.display_name.clone(),
+        email_verified: user.email_verified(),
+        email_verified_at: user.email_verified_at.map(Ts::new),
+        mail_delivers: state.mailer.delivers(),
         has_password: user.password_hash.is_some(),
         identities,
         linkable,
@@ -86,6 +92,8 @@ pub async fn profile(
         "unlinked" => "Sign-in provider removed.".to_string(),
         "password" => "Password updated.".to_string(),
         "saved" => "Profile saved.".to_string(),
+        "sent" => "Verification email sent. Check your inbox (and spam folder) and click the link.".to_string(),
+        "verified" => "Your email address is already verified.".to_string(),
         _ => String::new(),
     }).filter(|n| !n.is_empty());
     profile_page(&state, user.id, None, notice).await
@@ -197,6 +205,34 @@ pub async fn unlink(
     Ok(Redirect::to("/profile?notice=unlinked").into_response())
 }
 
+pub async fn resend_verification(
+    State(state): State<AppState>,
+    CurrentUser(user): CurrentUser,
+) -> Result<Response, AppError> {
+    match verify::send_verification(&state, user.id).await? {
+        SendOutcome::Sent => Ok(Redirect::to("/profile?notice=sent").into_response()),
+        SendOutcome::AlreadyVerified => Ok(Redirect::to("/profile?notice=verified").into_response()),
+        SendOutcome::TooSoon(secs) => {
+            profile_page(
+                &state,
+                user.id,
+                Some(format!("A verification email was just sent. Please wait {secs} seconds before asking for another.")),
+                None,
+            )
+            .await
+        }
+        SendOutcome::Failed(_) => {
+            profile_page(
+                &state,
+                user.id,
+                Some("The verification email could not be sent. Please try again later or tell an administrator.".into()),
+                None,
+            )
+            .await
+        }
+    }
+}
+
 // ------------------------------------------------------------ admin
 
 pub async fn admin_users(
@@ -231,6 +267,7 @@ pub async fn admin_users(
                     email: u.email,
                     name: u.display_name,
                     is_admin: u.is_admin,
+                    email_verified: u.email_verified_at.is_some(),
                     login_methods: methods.join(", "),
                     created: Ts::new(u.created_at),
                 }

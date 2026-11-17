@@ -26,6 +26,18 @@ diesel::table! {
 }
 
 diesel::table! {
+    email_verifications (id) {
+        id -> Integer,
+        user_id -> Integer,
+        email -> Text,
+        token_hash -> Text,
+        created_at -> Timestamp,
+        expires_at -> Timestamp,
+        used_at -> Nullable<Timestamp>,
+    }
+}
+
+diesel::table! {
     issues (id) {
         id -> Integer,
         title -> Text,
@@ -71,6 +83,7 @@ diesel::table! {
         password_hash -> Nullable<Text>,
         is_admin -> Bool,
         created_at -> Timestamp,
+        email_verified_at -> Nullable<Timestamp>,
     }
 }
 
@@ -79,12 +92,14 @@ diesel::joinable!(attachments -> issues (issue_id));
 diesel::joinable!(attachments -> users (uploader_id));
 diesel::joinable!(comments -> issues (issue_id));
 diesel::joinable!(comments -> users (author_id));
+diesel::joinable!(email_verifications -> users (user_id));
 diesel::joinable!(oauth_identities -> users (user_id));
 diesel::joinable!(sessions -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     attachments,
     comments,
+    email_verifications,
     issues,
     oauth_identities,
     sessions,

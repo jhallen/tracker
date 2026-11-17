@@ -24,6 +24,7 @@ pub fn router() -> Router<AppState> {
         .route("/logout", post(auth::logout))
         .route("/auth/{provider}/start", get(auth::oauth_start))
         .route("/auth/{provider}/callback", get(auth::oauth_callback))
+        .route("/verify-email", get(auth::verify_email))
         // issues
         .route("/issues", get(issues::list))
         .route("/issues/new", get(issues::new_form).post(issues::create))
@@ -36,6 +37,7 @@ pub fn router() -> Router<AppState> {
         .route("/profile", get(account::profile).post(account::update_profile))
         .route("/profile/password", post(account::change_password))
         .route("/profile/unlink/{id}", post(account::unlink))
+        .route("/profile/resend-verification", post(account::resend_verification))
         .route("/admin/users", get(account::admin_users))
         .route("/admin/users/{id}/toggle-admin", post(account::toggle_admin))
 }

@@ -2,6 +2,7 @@
 //! `CurrentUser` extractor and the same-origin check for form posts.
 
 pub mod oauth;
+pub mod verify;
 
 use argon2::{
     Argon2,
@@ -60,9 +61,9 @@ pub fn random_token() -> String {
     URL_SAFE_NO_PAD.encode(bytes)
 }
 
-/// Sessions are stored by the SHA-256 of the cookie token, so a leaked
-/// database does not leak usable session cookies.
-fn session_key(token: &str) -> String {
+/// Sessions and email-verification tokens are stored by their SHA-256, so
+/// a leaked database does not leak usable cookies or links.
+pub fn hash_token(token: &str) -> String {
     let digest = Sha256::digest(token.as_bytes());
     digest.iter().map(|b| format!("{b:02x}")).collect()
 }
@@ -74,11 +75,14 @@ pub fn normalize_email(email: &str) -> String {
 }
 
 /// Insert a user. The very first user of an installation becomes admin.
+/// `email_verified` is true only when an OAuth provider vouched for the
+/// address; everyone else confirms it via the emailed link.
 pub fn create_user(
     conn: &mut SqliteConnection,
     email: &str,
     display_name: &str,
     password_hash: Option<&str>,
+    email_verified: bool,
 ) -> Result<User, AppError> {
     let count: i64 = users::table.count().get_result(conn)?;
     let user = diesel::insert_into(users::table)
@@ -88,6 +92,7 @@ pub fn create_user(
             password_hash,
             is_admin: count == 0,
             created_at: Utc::now().naive_utc(),
+            email_verified_at: email_verified.then(|| Utc::now().naive_utc()),
         })
         .returning(User::as_returning())
         .get_result(conn)?;
@@ -102,7 +107,7 @@ pub async fn start_session(
     user_id: i32,
 ) -> Result<Cookie<'static>, AppError> {
     let token = random_token();
-    let key = session_key(&token);
+    let key = hash_token(&token);
     let hours = state.config.session_hours;
     db::run(&state.pool, move |conn| {
         let now = Utc::now().naive_utc();
@@ -130,7 +135,7 @@ pub async fn start_session(
 
 pub async fn end_session(state: &AppState, jar: &CookieJar) -> Result<(), AppError> {
     if let Some(c) = jar.get(SESSION_COOKIE) {
-        let key = session_key(c.value());
+        let key = hash_token(c.value());
         db::run(&state.pool, move |conn| {
             diesel::delete(sessions::table.find(key)).execute(conn)?;
             Ok(())
@@ -149,7 +154,7 @@ async fn user_from_headers(state: &AppState, headers: &HeaderMap) -> Result<Opti
     let Some(cookie) = jar.get(SESSION_COOKIE) else {
         return Ok(None);
     };
-    let key = session_key(cookie.value());
+    let key = hash_token(cookie.value());
     db::run(&state.pool, move |conn| {
         let now = Utc::now().naive_utc();
         let user = sessions::table

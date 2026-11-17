@@ -189,3 +189,16 @@ ul.plain { list-style: none; padding: 0; margin: 0; }
 .scan-field { display: flex; flex-direction: column; gap: .45rem; }
 .scan-field > label { margin-bottom: 0; }
 .scan-btn { width: 100%; border: 2px dashed var(--primary); color: var(--primary); background: var(--primary-soft); font-size: 1.05rem; min-height: 52px; }
+
+/* email verification */
+.small, .small-label { font-size: .85rem; }
+.email-status { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.badge.verified { background: var(--s-open-bg); color: var(--s-open); }
+.badge.unverified { background: var(--s-unassigned-bg); color: var(--s-unassigned); }
+.verify-box { background: var(--s-unassigned-bg); border-radius: 10px; padding: .75rem .9rem; }
+.verify-box p { margin: 0 0 .6rem; }
+.alert.notice { background: var(--s-unassigned-bg); color: var(--text); }
+.verify-banner { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-bottom: 1rem; }
+.verify-icon { width: 56px; height: 56px; margin: 0 auto .5rem; border-radius: 50%; font-size: 2rem; line-height: 56px; font-weight: 700; }
+.verify-icon.ok { background: var(--s-open-bg); color: var(--s-open); }
+.verify-icon.bad { background: var(--danger-soft); color: var(--danger); }

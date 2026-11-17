@@ -4,6 +4,10 @@ A mobile-friendly web app for reporting and tracking greenhouse maintenance
 requests (broken pumps, misters, vents, heaters, lights…). It is written in Rust
 (Axum + Askama + Diesel) and uses SQLite by default.
 
+* Your email address is your username, and you choose a separate display
+  name that other people see. New accounts get an email with a link to
+  confirm the address. A **Resend** button and a verified / not-verified
+  badge are on the profile page, and nothing requires a verified address.
 * Sign up with email and password, or with Google, Microsoft, GitHub, GitLab,
   Facebook, Discord, or any OpenID Connect provider.
 * The dashboard shows the requests you submitted, the requests assigned to you,
@@ -104,7 +108,49 @@ so it opens full-screen like an app.
 | `ALLOW_REGISTRATION` | `true` | allow self sign-up (password and OAuth) |
 | `AUTO_MIGRATE` | `true` | apply pending migrations when the server starts |
 | `STATIC_DIR` | `<crate>/static` | location of CSS/JS (set this when deploying the binary elsewhere) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM` | unset | outgoing email; see *Email* below |
 | `RUST_LOG` | `greenhouse_tracker=info,tower_http=info` | log filter |
+
+## Email (address verification)
+
+When someone signs up, the app emails them a link of the form
+`<BASE_URL>/verify-email?token=…`:
+- **The link:** clicking it marks the address verified. It works once,
+  expires after 48 hours, and works whether or not that browser is logged in.
+- **Status:** the profile page shows **✓ Verified** or **Not verified**, the
+  dashboard shows a reminder banner, and admins see a *Verified* column on
+  the Users page.
+- **Resend:** an unverified user can press **Resend verification email**,
+  at most once a minute.
+- **Nothing is blocked:** an unverified user can do everything except
+  (later) receive email notifications.
+- **OAuth sign-ups:** accounts created through Google, GitHub, Facebook and
+  other providers that confirm the address are marked verified
+  automatically, with no email.
+
+Set the `SMTP_*` and `MAIL_FROM` variables in `.env` to send real email.
+Any SMTP service works: Gmail or Google Workspace with an app password,
+Microsoft 365, Amazon SES, Postmark, Mailgun, SendGrid, or your own server.
+For example:
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURITY=starttls
+SMTP_USERNAME=greenhouse@yourdomain.com
+SMTP_PASSWORD=<app password>
+MAIL_FROM="Greenhouse Maintenance <greenhouse@yourdomain.com>"
+```
+
+**Without SMTP the app still works.** Each email is written to the server log
+instead of being sent, including the verification link, which you can copy
+from the log during development. For local testing with a real inbox UI, run
+[Mailpit](https://mailpit.axllent.org/) and set `SMTP_HOST=localhost`,
+`SMTP_PORT=1025` and `SMTP_SECURITY=none`. Mailpit shows its inbox at
+http://localhost:8025.
+
+Make sure `BASE_URL` is the address people actually use, because the
+emailed links are built from it.
 
 ## Sign-in providers (OAuth)
 

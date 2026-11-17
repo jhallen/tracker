@@ -1,0 +1,9 @@
+Hello {{ name }},
+
+Please confirm that this is your email address for Greenhouse Maintenance
+by opening this link:
+
+{{ link }}
+
+The link works once and expires in {{ hours }} hours. If you did not sign up,
+you can ignore this message.
