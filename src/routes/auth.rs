@@ -15,12 +15,13 @@ use crate::{
     auth::{
         self, MIN_PASSWORD_LEN, MaybeUser, normalize_email,
         oauth::ExternalProfile,
+        verify::{self, ConfirmOutcome, SendOutcome},
     },
     db,
     error::AppError,
     models::{NewOAuthIdentity, User},
     schema::{oauth_identities, users},
-    views::{LoginPage, ProviderButton, RegisterPage, render},
+    views::{LoginPage, Nav, ProviderButton, RegisterPage, VerifyEmailPage, render},
 };
 
 const OAUTH_COOKIE: &str = "gt_oauth";
@@ -123,12 +124,13 @@ pub async fn register(
         if exists {
             return Ok(None);
         }
-        auth::create_user(conn, &e, &n, Some(&hash)).map(Some)
+        auth::create_user(conn, &e, &n, Some(&hash), false).map(Some)
     })
     .await?;
     let Some(user) = created else {
         return fail("An account with that email already exists. Try logging in.");
     };
+    send_verification_logged(&state, user.id).await;
     let cookie = auth::start_session(&state, user.id).await?;
     Ok((jar.add(cookie), Redirect::to("/")).into_response())
 }
@@ -300,6 +302,13 @@ pub async fn oauth_callback(
     .await?;
 
     match outcome {
+        Outcome::Created { user_id, verified } => {
+            if !verified {
+                send_verification_logged(&state, user_id).await;
+            }
+            let cookie = auth::start_session(&state, user_id).await?;
+            Ok((jar.add(cookie), Redirect::to("/")).into_response())
+        }
         Outcome::Login(user_id) => {
             let cookie = auth::start_session(&state, user_id).await?;
             Ok((jar.add(cookie), Redirect::to("/")).into_response())
@@ -311,6 +320,7 @@ pub async fn oauth_callback(
 
 enum Outcome {
     Login(i32),
+    Created { user_id: i32, verified: bool },
     Linked,
     Refused(String),
 }
@@ -349,6 +359,12 @@ async fn resolve_identity(
                             created_at: now,
                         })
                         .execute(conn)?;
+                    // The provider vouches for the same address → verified.
+                    let own_email: String =
+                        users::table.find(target).select(users::email).first(conn)?;
+                    if profile.email_verified && email.as_deref() == Some(own_email.as_str()) {
+                        verify::mark_verified(conn, target)?;
+                    }
                     Outcome::Linked
                 }
             });
@@ -385,7 +401,7 @@ async fn resolve_identity(
             .filter(|n| !n.trim().is_empty())
             .unwrap_or_else(|| email.split('@').next().unwrap_or("User").to_string());
         let user = conn.transaction::<_, AppError, _>(|conn| {
-            let user = auth::create_user(conn, &email, &name, None)?;
+            let user = auth::create_user(conn, &email, &name, None, profile.email_verified)?;
             diesel::insert_into(oauth_identities::table)
                 .values(NewOAuthIdentity {
                     user_id: user.id,
@@ -397,7 +413,73 @@ async fn resolve_identity(
                 .execute(conn)?;
             Ok(user)
         })?;
-        Ok(Outcome::Login(user.id))
+        Ok(Outcome::Created {
+            user_id: user.id,
+            verified: user.email_verified(),
+        })
     })
     .await
+}
+
+/// Send the verification email after sign-up. Failures are logged, not
+/// shown: the account works anyway and the user can resend from Profile.
+async fn send_verification_logged(state: &AppState, user_id: i32) {
+    match verify::send_verification(state, user_id).await {
+        Ok(SendOutcome::Failed(e)) => tracing::warn!("verification email for user {user_id} failed: {e}"),
+        Err(e) => tracing::warn!("verification email for user {user_id} failed: {e}"),
+        Ok(_) => {}
+    }
+}
+
+// ------------------------------------------------------------ verify email
+
+#[derive(Deserialize)]
+pub struct VerifyQuery {
+    #[serde(default)]
+    token: String,
+}
+
+/// The link in the verification email. Works whether or not the browser is
+/// logged in (people often open mail on a different device).
+pub async fn verify_email(
+    State(state): State<AppState>,
+    MaybeUser(user): MaybeUser,
+    Query(q): Query<VerifyQuery>,
+) -> Result<Response, AppError> {
+    let outcome = verify::confirm(&state, q.token).await?;
+    let (ok, heading, message) = match outcome {
+        ConfirmOutcome::Verified { email } => (
+            true,
+            "Email verified".to_string(),
+            format!("Thanks! {email} is confirmed."),
+        ),
+        ConfirmOutcome::AlreadyVerified { email } => (
+            true,
+            "Already verified".to_string(),
+            format!("{email} was already confirmed. Nothing else to do."),
+        ),
+        ConfirmOutcome::Expired => (
+            false,
+            "Link expired".to_string(),
+            "This verification link has expired. Log in and press \"Resend verification email\" on your profile page.".to_string(),
+        ),
+        ConfirmOutcome::Invalid => (
+            false,
+            "Link not valid".to_string(),
+            "This verification link is invalid or has already been used. Log in and press \"Resend verification email\" on your profile page to get a new one.".to_string(),
+        ),
+    };
+    // Re-read the viewer so the nav reflects the new state.
+    let nav = match user {
+        Some(u) => {
+            let id = u.id;
+            let fresh: User = db::run(&state.pool, move |conn| {
+                Ok(users::table.find(id).select(User::as_select()).first(conn)?)
+            })
+            .await?;
+            Nav::of(&fresh)
+        }
+        None => None,
+    };
+    render(&VerifyEmailPage { logged_in: nav.is_some(), nav, ok, heading, message })
 }

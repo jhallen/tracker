@@ -4,6 +4,7 @@ pub mod auth;
 pub mod config;
 pub mod db;
 pub mod error;
+pub mod mailer;
 pub mod models;
 pub mod routes;
 pub mod sanitize;
@@ -23,6 +24,7 @@ pub struct AppState {
     pub pool: DbPool,
     pub config: Arc<Config>,
     pub http: reqwest::Client,
+    pub mailer: mailer::Mailer,
 }
 
 impl AppState {
@@ -37,7 +39,9 @@ impl AppState {
         let http = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(15))
             .build()?;
+        let mailer = mailer::Mailer::from_config(&config.mail)?;
         Ok(AppState {
+            mailer,
             pool,
             config: Arc::new(config),
             http,

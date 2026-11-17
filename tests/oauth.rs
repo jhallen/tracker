@@ -56,12 +56,13 @@ async fn oidc_sign_up_then_sign_in() {
         userinfo_url: format!("{base}/userinfo"),
         scopes: "openid email profile".into(),
     });
-    let app = build_app(AppState::new(cfg).unwrap());
+    let state = AppState::new(cfg).unwrap();
+    let app = build_app(state.clone());
 
     // Login page shows the provider button.
     let res = app.clone().oneshot(Request::get("/login").body(Body::empty()).unwrap()).await.unwrap();
     let body = String::from_utf8(res.into_body().collect().await.unwrap().to_bytes().to_vec()).unwrap();
-    assert!(body.contains("/auth/oidc/start") && body.contains("Test SSO"));
+    assert!(body.contains("/auth/oidc/start") && body.contains("Log in with Test SSO"));
 
     for round in 0..2 {
         let res = app
@@ -111,6 +112,9 @@ async fn oidc_sign_up_then_sign_in() {
         let body = String::from_utf8(res.into_body().collect().await.unwrap().to_bytes().to_vec()).unwrap();
         assert!(body.contains("carol@example.com"), "email is normalised");
         assert!(body.contains("Test SSO"));
+        // The provider said email_verified=true: no email needed.
+        assert!(body.contains("✓ Verified"));
     }
+    assert!(state.mailer.sent().is_empty());
     let _ = std::fs::remove_dir_all(dir);
 }

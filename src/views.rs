@@ -16,6 +16,7 @@ pub struct Nav {
     pub id: i32,
     pub name: String,
     pub is_admin: bool,
+    pub email_verified: bool,
 }
 
 impl Nav {
@@ -24,6 +25,7 @@ impl Nav {
             id: u.id,
             name: u.display_name.clone(),
             is_admin: u.is_admin,
+            email_verified: u.email_verified(),
         })
     }
 }
@@ -192,6 +194,9 @@ pub struct ProfilePage {
     pub notice: Option<String>,
     pub email: String,
     pub display_name: String,
+    pub email_verified: bool,
+    pub email_verified_at: Option<Ts>,
+    pub mail_delivers: bool,
     pub has_password: bool,
     pub identities: Vec<IdentityView>,
     pub linkable: Vec<ProviderButton>,
@@ -203,6 +208,7 @@ pub struct AdminUserRow {
     pub email: String,
     pub name: String,
     pub is_admin: bool,
+    pub email_verified: bool,
     pub is_self: bool,
     pub login_methods: String,
     pub created: Ts,
@@ -213,4 +219,14 @@ pub struct AdminUserRow {
 pub struct AdminUsersPage {
     pub nav: Option<Nav>,
     pub users: Vec<AdminUserRow>,
+}
+
+#[derive(Template)]
+#[template(path = "verify_email.html")]
+pub struct VerifyEmailPage {
+    pub nav: Option<Nav>,
+    pub logged_in: bool,
+    pub ok: bool,
+    pub heading: String,
+    pub message: String,
 }

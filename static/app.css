@@ -97,7 +97,7 @@ fieldset { border: 0; padding: 0; margin: 0; }
 
 .divider { display: flex; align-items: center; gap: .75rem; color: var(--muted); margin: 1.25rem 0 .75rem; font-size: .9rem; }
 .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
-.providers { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.providers { display: grid; gap: .5rem; grid-template-columns: 1fr; }
 
 /* issue cards */
 .issue-list { display: grid; gap: .6rem; }
@@ -186,3 +186,19 @@ ul.plain { list-style: none; padding: 0; margin: 0; }
 .identity { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .4rem 0; border-bottom: 1px solid var(--border); }
 .msg.highlight { animation: flash 2s ease-out; }
 @keyframes flash { from { box-shadow: 0 0 0 4px var(--primary); } to { box-shadow: var(--shadow); } }
+.scan-field { display: flex; flex-direction: column; gap: .45rem; }
+.scan-field > label { margin-bottom: 0; }
+.scan-btn { width: 100%; border: 2px dashed var(--primary); color: var(--primary); background: var(--primary-soft); font-size: 1.05rem; min-height: 52px; }
+
+/* email verification */
+.small, .small-label { font-size: .85rem; }
+.email-status { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.badge.verified { background: var(--s-open-bg); color: var(--s-open); }
+.badge.unverified { background: var(--s-unassigned-bg); color: var(--s-unassigned); }
+.verify-box { background: var(--s-unassigned-bg); border-radius: 10px; padding: .75rem .9rem; }
+.verify-box p { margin: 0 0 .6rem; }
+.alert.notice { background: var(--s-unassigned-bg); color: var(--text); }
+.verify-banner { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-bottom: 1rem; }
+.verify-icon { width: 56px; height: 56px; margin: 0 auto .5rem; border-radius: 50%; font-size: 2rem; line-height: 56px; font-weight: 700; }
+.verify-icon.ok { background: var(--s-open-bg); color: var(--s-open); }
+.verify-icon.bad { background: var(--danger-soft); color: var(--danger); }

@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
+{% if let Some(n) = nav %}{% if !n.email_verified %}
+<div class="alert notice verify-banner">
+  <span>Please confirm your email address. Check your inbox for our link, or</span>
+  <form method="post" action="/profile/resend-verification" class="inline"><button class="btn small" type="submit">Resend email</button></form>
+</div>
+{% endif %}{% endif %}
 <div class="page-head">
   <h1>Dashboard</h1>
   <a class="btn primary hide-mobile" href="/issues/new">+ New request</a>

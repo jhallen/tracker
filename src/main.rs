@@ -65,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
             db::run_migrations(&pool)?;
             let mut conn = pool.get()?;
             let hash = auth::hash_password(password).map_err(|e| anyhow::anyhow!("{e}"))?;
-            let user = auth::create_user(&mut conn, &auth::normalize_email(email), name, Some(&hash))
+            let user = auth::create_user(&mut conn, &auth::normalize_email(email), name, Some(&hash), false)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             println!("Created user #{} ({}){}", user.id, user.email, if user.is_admin { " as admin" } else { "" });
             Ok(())

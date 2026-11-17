@@ -5,11 +5,11 @@
   <h1>Create an account</h1>
   {% if let Some(e) = error %}<p class="alert error">{{ e }}</p>{% endif %}
   <form method="post" action="/register" class="stack">
-    <label>Your name
-      <input type="text" name="display_name" value="{{ display_name }}" autocomplete="name" maxlength="100" required autofocus>
+    <label>Email <small class="muted">(this is your username for logging in)</small>
+      <input type="email" name="email" value="{{ email }}" autocomplete="username" required autofocus>
     </label>
-    <label>Email
-      <input type="email" name="email" value="{{ email }}" autocomplete="email" required>
+    <label>Display name <small class="muted">(how other people see you, e.g. "Pat Smith")</small>
+      <input type="text" name="display_name" value="{{ display_name }}" autocomplete="name" maxlength="100" required>
     </label>
     <label>Password <small class="muted">(at least {{ min_password }} characters)</small>
       <input type="password" name="password" autocomplete="new-password" minlength="{{ min_password }}" required>
@@ -17,8 +17,10 @@
     <label>Confirm password
       <input type="password" name="password_confirm" autocomplete="new-password" minlength="{{ min_password }}" required>
     </label>
+    <p class="muted small">We'll email you a link to confirm your address.</p>
     <button class="btn primary block" type="submit">Sign up</button>
   </form>
+  {% let provider_verb = "Sign up" %}
   {% include "_providers.html" %}
   <p class="muted center">Already registered? <a href="/login">Log in</a></p>
 </div>

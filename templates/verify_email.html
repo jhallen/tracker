@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }} · Greenhouse Maintenance{% endblock %}
+{% block content %}
+<div class="card narrow center">
+  <div class="verify-icon {% if ok %}ok{% else %}bad{% endif %}" aria-hidden="true">{% if ok %}✓{% else %}!{% endif %}</div>
+  <h1>{{ heading }}</h1>
+  <p>{{ message }}</p>
+  {% if logged_in %}
+    <p><a class="btn primary" href="/">Go to dashboard</a> <a class="btn" href="/profile">Profile</a></p>
+  {% else %}
+    <p><a class="btn primary" href="/login">Log in</a></p>
+  {% endif %}
+</div>
+{% endblock %}

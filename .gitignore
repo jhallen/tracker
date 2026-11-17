@@ -35,3 +35,4 @@ rustc-ice-*.txt
 *.db-wal
 /uploads/
 /backups/
+migrations/.diesel_lock

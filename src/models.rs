@@ -16,6 +16,15 @@ pub struct User {
     pub password_hash: Option<String>,
     pub is_admin: bool,
     pub created_at: NaiveDateTime,
+    /// When the address was confirmed (link clicked, or vouched for by an
+    /// OAuth provider). `None` = not verified; the app works either way.
+    pub email_verified_at: Option<NaiveDateTime>,
+}
+
+impl User {
+    pub fn email_verified(&self) -> bool {
+        self.email_verified_at.is_some()
+    }
 }
 
 #[derive(Insertable)]
@@ -26,6 +35,17 @@ pub struct NewUser<'a> {
     pub password_hash: Option<&'a str>,
     pub is_admin: bool,
     pub created_at: NaiveDateTime,
+    pub email_verified_at: Option<NaiveDateTime>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = email_verifications)]
+pub struct NewEmailVerification {
+    pub user_id: i32,
+    pub email: String,
+    pub token_hash: String,
+    pub created_at: NaiveDateTime,
+    pub expires_at: NaiveDateTime,
 }
 
 #[derive(Queryable, Selectable, Identifiable, Associations, Debug, Clone)]

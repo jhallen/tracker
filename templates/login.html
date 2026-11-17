@@ -13,6 +13,7 @@
     </label>
     <button class="btn primary block" type="submit">Log in</button>
   </form>
+  {% let provider_verb = "Log in" %}
   {% include "_providers.html" %}
   {% if allow_registration %}
   <p class="muted center">New here? <a href="/register">Create an account</a></p>

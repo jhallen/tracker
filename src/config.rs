@@ -27,6 +27,45 @@ pub struct Config {
     pub auto_migrate: bool,
     /// OAuth providers that have credentials configured.
     pub oauth_providers: Vec<OAuthProvider>,
+    /// How outgoing email is delivered.
+    pub mail: MailConfig,
+}
+
+/// Outgoing email settings. Without `SMTP_HOST` the app still runs and
+/// writes each email (including verification links) to the server log.
+#[derive(Clone, Debug)]
+pub enum MailConfig {
+    Smtp {
+        host: String,
+        port: Option<u16>,
+        /// `starttls` (default, port 587), `tls` (implicit TLS, port 465)
+        /// or `none` (plain, for a local relay or a test catcher like Mailpit).
+        security: String,
+        username: Option<String>,
+        password: Option<String>,
+        from: String,
+    },
+    /// Log emails instead of sending them (development default).
+    Log,
+    /// Keep emails in memory (tests).
+    Memory,
+}
+
+impl MailConfig {
+    fn from_env() -> Self {
+        let Some(host) = var("SMTP_HOST") else {
+            return MailConfig::Log;
+        };
+        MailConfig::Smtp {
+            host,
+            port: var("SMTP_PORT").and_then(|p| p.parse().ok()),
+            security: var("SMTP_SECURITY").unwrap_or_else(|| "starttls".into()).to_ascii_lowercase(),
+            username: var("SMTP_USERNAME"),
+            password: var("SMTP_PASSWORD"),
+            from: var("MAIL_FROM")
+                .unwrap_or_else(|| "Greenhouse Maintenance <noreply@localhost>".into()),
+        }
+    }
 }
 
 fn var(name: &str) -> Option<String> {
@@ -74,6 +113,7 @@ impl Config {
             allow_registration: flag("ALLOW_REGISTRATION", true),
             auto_migrate: flag("AUTO_MIGRATE", true),
             oauth_providers,
+            mail: MailConfig::from_env(),
         }
     }
 
@@ -90,6 +130,7 @@ impl Config {
             allow_registration: true,
             auto_migrate: true,
             oauth_providers: Vec::new(),
+            mail: MailConfig::Memory,
         }
     }
 

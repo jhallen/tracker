@@ -7,9 +7,29 @@
 
 <section class="card stack">
   <h2>Details</h2>
-  <p class="muted">Signed in as <strong>{{ email }}</strong></p>
+  <div class="email-status">
+    <div>
+      <div class="muted small-label">Email (your username)</div>
+      <strong>{{ email }}</strong>
+    </div>
+    {% if email_verified %}
+      <span class="badge verified" title="{% if let Some(t) = email_verified_at %}Verified {{ t.text }}{% endif %}">✓ Verified</span>
+    {% else %}
+      <span class="badge unverified">Not verified</span>
+    {% endif %}
+  </div>
+  {% if !email_verified %}
+  <div class="verify-box">
+    <p>We sent a link to <strong>{{ email }}</strong>. Click it to confirm your address so you can receive status updates by email. Everything else works without it.</p>
+    {% if !mail_delivers %}<p class="muted small">Email delivery isn't configured on this server yet, so the message was written to the server log instead. Ask your administrator.</p>{% endif %}
+    <form method="post" action="/profile/resend-verification" class="inline">
+      <button class="btn" type="submit">Resend verification email</button>
+    </form>
+  </div>
+  {% endif %}
   <form method="post" action="/profile" class="stack">
-    <label>Display name <input type="text" name="display_name" value="{{ display_name }}" maxlength="100" required></label>
+    <label>Display name <small class="muted">(shown to other people)</small>
+      <input type="text" name="display_name" value="{{ display_name }}" maxlength="100" required></label>
     <div class="actions"><button class="btn primary" type="submit">Save</button></div>
   </form>
 </section>

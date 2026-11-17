@@ -46,6 +46,41 @@
     return typeof n === "string" ? n.toLowerCase() : "";
   }
 
+  // Decode a barcode from an image file. Returns {text, format} or null.
+  // Large camera photos are scaled down first so ZXing stays fast.
+  async function decodeFile(file) {
+    try {
+      const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+      const detector = await nativeDetector();
+      if (detector) {
+        const codes = await detector.detect(bmp);
+        return codes.length ? { text: codes[0].rawValue, format: codes[0].format } : null;
+      }
+      const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bmp.width * scale);
+      canvas.height = Math.round(bmp.height * scale);
+      canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      const ZXing = await loadZXing();
+      const hints = new Map();
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+      const r = await new ZXing.BrowserMultiFormatReader(hints).decodeFromImageUrl(canvas.toDataURL("image/png"));
+      return { text: r.getText(), format: zxingFormatName(ZXing, r) };
+    } catch (_) {
+      return null; // no barcode, or the image could not be decoded
+    }
+  }
+
+  function fill(target, formatTarget, text, format, how) {
+    target.value = text;
+    target.dispatchEvent(new Event("input", { bubbles: true }));
+    if (formatTarget) {
+      formatTarget.value = format || "";
+      const lbl = formatTarget.parentElement.querySelector("[data-format-label]");
+      if (lbl) lbl.textContent = (how || "Scanned") + (format ? " as " + format.replace(/_/g, "-").toUpperCase() : "");
+    }
+  }
+
   function buildDialog() {
     const dlg = document.createElement("dialog");
     dlg.className = "scanner";
@@ -78,13 +113,7 @@
     }
     function found(text, format) {
       if (stopped) return;
-      target.value = text;
-      target.dispatchEvent(new Event("input", { bubbles: true }));
-      if (formatTarget) {
-        formatTarget.value = format || "";
-        const lbl = formatTarget.parentElement.querySelector("[data-format-label]");
-        if (lbl) lbl.textContent = format ? "Scanned as " + format.replace(/_/g, "-").toUpperCase() : "";
-      }
+      fill(target, formatTarget, text, format, "Scanned");
       if (navigator.vibrate) navigator.vibrate(80);
       stop();
     }
@@ -100,22 +129,9 @@
       const file = photo.files[0];
       if (!file) return;
       status.textContent = "Reading photo…";
-      try {
-        if (detector) {
-          const codes = await detector.detect(await createImageBitmap(file));
-          if (codes.length) return found(codes[0].rawValue, codes[0].format);
-        } else {
-          const ZXing = await loadZXing();
-          const url = URL.createObjectURL(file);
-          try {
-            const r = await new ZXing.BrowserMultiFormatReader().decodeFromImageUrl(url);
-            return found(r.getText(), zxingFormatName(ZXing, r));
-          } finally { URL.revokeObjectURL(url); }
-        }
-        status.textContent = "No barcode found in that photo. Try again closer and in focus.";
-      } catch (_) {
-        status.textContent = "No barcode found in that photo. Try again closer and in focus.";
-      }
+      const r = await decodeFile(file);
+      if (r) return found(r.text, r.format);
+      status.textContent = "No barcode found in that photo. Try again closer and in focus.";
     });
 
     if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -169,6 +185,21 @@
     const target = document.querySelector(btn.dataset.scan);
     const fmt = btn.dataset.scanFormat ? document.querySelector(btn.dataset.scanFormat) : null;
     if (target) scan(target, fmt);
+  });
+
+  // Photos attached to a request are also checked for a barcode: if one is
+  // found and the equipment code is still empty, it is filled in.
+  document.addEventListener("photos:added", async (e) => {
+    const form = e.target.closest("form");
+    const btn = form && form.querySelector("[data-scan][data-scan-format]");
+    if (!btn) return;
+    const target = document.querySelector(btn.dataset.scan);
+    const fmt = document.querySelector(btn.dataset.scanFormat);
+    for (const file of e.detail.files) {
+      if (!target || target.value.trim()) return;
+      const r = await decodeFile(file);
+      if (r && !target.value.trim()) fill(target, fmt, r.text, r.format, "Found in your photo");
+    }
   });
 
   // Typing a code by hand clears the remembered symbology.

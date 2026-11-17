@@ -8,6 +8,14 @@
     <input type="text" name="title" value="{{ title }}" maxlength="200" required placeholder="e.g. Mister pump in house 3 not running">
   </label>
 
+  <div class="field scan-field">
+    <label for="equipment_code">Equipment barcode / asset tag <small class="muted">(optional)</small></label>
+    <button type="button" class="btn scan-btn" data-scan="#equipment_code" data-scan-format="#equipment_code_format">▥ Scan equipment barcode</button>
+    <input type="text" id="equipment_code" name="equipment_code" value="{{ equipment_code }}" autocomplete="off" placeholder="…or type the code here">
+    <input type="hidden" id="equipment_code_format" name="equipment_code_format" value="{{ equipment_code_format }}">
+    <small class="muted scan-format" data-format-label>Tip: a photo that shows the barcode also fills this in.</small>
+  </div>
+
   <div class="grid2">
     <label>Location
       <input type="text" name="location" value="{{ location }}" placeholder="e.g. House 3, bench 12">
@@ -17,16 +25,6 @@
         {% for p in priorities %}<option value="{{ p }}" {% if priority == *p %}selected{% endif %}>{{ p }}</option>{% endfor %}
       </select>
     </label>
-  </div>
-
-  <div class="field">
-    <label for="equipment_code">Equipment barcode / asset tag <small class="muted">(optional)</small></label>
-    <div class="input-row">
-      <input type="text" id="equipment_code" name="equipment_code" value="{{ equipment_code }}" autocomplete="off" placeholder="Scan or type the code">
-      <button type="button" class="btn" data-scan="#equipment_code" data-scan-format="#equipment_code_format">▥ Scan</button>
-    </div>
-    <input type="hidden" id="equipment_code_format" name="equipment_code_format" value="{{ equipment_code_format }}">
-    <small class="muted scan-format" data-format-label></small>
   </div>
 
   <div class="field">
