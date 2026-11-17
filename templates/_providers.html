@@ -1,8 +1,8 @@
 {% if !providers.is_empty() %}
-<div class="divider"><span>or continue with</span></div>
+<div class="divider"><span>or</span></div>
 <div class="providers">
   {% for p in providers %}
-  <a class="btn provider provider-{{ p.slug }}" href="/auth/{{ p.slug }}/start">{{ p.name }}</a>
+  <a class="btn provider provider-{{ p.slug }}" href="/auth/{{ p.slug }}/start">{{ provider_verb }} with {{ p.name }}</a>
   {% endfor %}
 </div>
 {% endif %}

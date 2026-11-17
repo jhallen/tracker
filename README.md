@@ -108,8 +108,11 @@ so it opens full-screen like an app.
 
 ## Sign-in providers (OAuth)
 
-Each provider's button appears once you set its `*_CLIENT_ID` **and**
-`*_CLIENT_SECRET`. Register this redirect URI in the provider's console:
+**The login page shows no "Log in with …" buttons until you configure at
+least one provider.** Each provider's button appears once you set its
+`*_CLIENT_ID` **and** `*_CLIENT_SECRET` in `.env` and restart the server. The
+startup log line `OAuth providers enabled: …` shows which providers are
+active. Register this redirect URI in the provider's console:
 
 ```
 <BASE_URL>/auth/<provider>/callback
@@ -124,6 +127,29 @@ Each provider's button appears once you set its `*_CLIENT_ID` **and**
 | Facebook | `facebook` | `FACEBOOK_` | developers.facebook.com → My Apps → Facebook Login | needs the `email` permission |
 | Discord | `discord` | `DISCORD_` | discord.com/developers/applications → OAuth2 | |
 | Any OpenID Connect provider (Okta, Auth0, Keycloak, Authentik, Zitadel, Azure AD B2C, …) | `oidc` | `OIDC_` | your identity provider | also set `OIDC_AUTH_URL`, `OIDC_TOKEN_URL`, `OIDC_USERINFO_URL`, `OIDC_DISPLAY_NAME` |
+
+### Example: enabling "Log in with Google"
+
+1. Go to <https://console.cloud.google.com/>, create (or pick) a project,
+   then open **APIs & Services → OAuth consent screen**. Choose
+   *External* (or *Internal* for a Google Workspace organisation), fill in
+   the app name and support email, and add the scopes `openid`, `email` and
+   `profile`.
+2. Open **APIs & Services → Credentials → Create credentials → OAuth client
+   ID → Web application**. Under **Authorised redirect URIs**, add
+   `<BASE_URL>/auth/google/callback`, for example
+   `https://tracker.example.com/auth/google/callback`. Google accepts
+   `http://` only for `localhost`.
+3. Copy the client ID and client secret into `.env`:
+   ```
+   GOOGLE_CLIENT_ID=1234-abc.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=GOCSPX-...
+   ```
+4. Restart the server. The login and sign-up pages now show **Log in with
+   Google** and **Sign up with Google**.
+
+While the consent screen is in *Testing* mode, only the test users you list
+there can sign in. Publish the app to open it to everyone.
 
 Any provider's scopes can be overridden with `<PREFIX>_SCOPES`, and its button
 label with `<PREFIX>_DISPLAY_NAME`.

@@ -61,7 +61,7 @@ async fn oidc_sign_up_then_sign_in() {
     // Login page shows the provider button.
     let res = app.clone().oneshot(Request::get("/login").body(Body::empty()).unwrap()).await.unwrap();
     let body = String::from_utf8(res.into_body().collect().await.unwrap().to_bytes().to_vec()).unwrap();
-    assert!(body.contains("/auth/oidc/start") && body.contains("Test SSO"));
+    assert!(body.contains("/auth/oidc/start") && body.contains("Log in with Test SSO"));
 
     for round in 0..2 {
         let res = app

@@ -97,7 +97,7 @@ fieldset { border: 0; padding: 0; margin: 0; }
 
 .divider { display: flex; align-items: center; gap: .75rem; color: var(--muted); margin: 1.25rem 0 .75rem; font-size: .9rem; }
 .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
-.providers { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.providers { display: grid; gap: .5rem; grid-template-columns: 1fr; }
 
 /* issue cards */
 .issue-list { display: grid; gap: .6rem; }
